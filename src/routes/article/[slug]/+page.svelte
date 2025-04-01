@@ -120,13 +120,14 @@
       
       <!-- Source and Date -->
       <div class="mb-3">
-        <span class="text-red-600 font-medium">{article.author_name || 'Portal Berita'}</span>
-        <div class="text-gray-400 text-sm mt-1">
-          {#if article.date_published}
-            {formatDateWithTime(article.date_published)}
-          {/if}
-        </div>
-      </div>
+  <div class="text-yellow-500 font-medium">Urbansiana Media Infotainment</div>
+  <div class="text-gray-800 text-sm">{article.author_name || 'Portal Berita'}</div>
+  <div class="text-gray-400 text-sm mt-1">
+    {#if article.date_published}
+      {formatDateWithTime(article.date_published)}
+    {/if}
+  </div>
+</div>
       
       <!-- Share Buttons (tampilkan hanya jika di client side) -->
       {#if isClient}

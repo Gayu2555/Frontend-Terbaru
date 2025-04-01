@@ -2,11 +2,13 @@
   import { writable } from 'svelte/store';
   import { fly } from 'svelte/transition';
   import { X, Search } from 'lucide-svelte';
+  import lozad from 'lozad';
+  import { onMount } from 'svelte';
+  import SearchComponent from '$lib/components/SearchComponent.svelte';
   import logoPath from '$lib/assets/logo.png';
 
   // Manajemen status untuk visibilitas pencarian dan input
   const pencarianSelulerTerlihat = writable(false);
-  const kueriPencarian = writable('');
 
   // Toggle visibilitas pencarian seluler
   function togglePencarianSeluler() {
@@ -16,14 +18,19 @@
   // Tutup pencarian seluler
   function tutupPencarianSeluler() {
     pencarianSelulerTerlihat.set(false);
-    kueriPencarian.set('');
   }
-
-  // Tangani pengiriman pencarian
-  function tanganiPencarian(event: Event) {
-    event.preventDefault();
-    console.log('Mencari:', $kueriPencarian);
-  }
+  
+  onMount(() => {
+    // Inisialisasi lozad untuk lazy loading gambar logo
+    const observer = lozad('.lozad', {
+      rootMargin: '10px 0px',
+      threshold: 0.1,
+      loaded: function(el) {
+        el.classList.add('loaded');
+      }
+    });
+    observer.observe();
+  });
 </script>
 
 <nav class="bg-white shadow-lg sticky top-0 z-50">
@@ -35,13 +42,21 @@
         class="flex-shrink-0 flex items-center cursor-pointer"
         aria-label="Beranda"
       >
-        <div class="w-11 sm:w-40 md:w-48 h-auto relative">
+        <div class="w-32 sm:w-40 md:w-48 h-auto relative">
           <img 
             src={logoPath || "/placeholder.svg"} 
             alt="Logo" 
-            class="w-full h-auto object-contain max-h-46"
-            loading="eager"
+            class="lozad w-full h-auto object-contain"
+            data-src={logoPath || "/placeholder.svg"}
+            loading="lazy"
           >
+          <noscript>
+            <img 
+              src={logoPath || "/placeholder.svg"} 
+              alt="Logo" 
+              class="w-full h-auto object-contain"
+            >
+          </noscript>
         </div>
       </a>
 
@@ -55,26 +70,9 @@
       </button>
 
       <!-- Pencarian Desktop -->
-      <form 
-        on:submit={tanganiPencarian}
-        class="hidden md:flex items-center justify-center flex-1 mx-4"
-      >
-        <div class="w-full max-w-md relative group">
-          <input 
-            type="search" 
-            bind:value={$kueriPencarian}
-            placeholder="Cari apa pun..."
-            class="w-full px-4 py-2 pr-10 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-sm"
-          >
-          <button 
-            type="submit"
-            class="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-gray-500 group-focus-within:text-primary"
-            aria-label="Kirim Pencarian"
-          >
-            <Search size={18} />
-          </button>
-        </div>
-      </form>
+      <div class="hidden md:flex items-center justify-center flex-1 mx-4">
+        <SearchComponent isMobile={false} />
+      </div>
     </div>
 
     <!-- Overlay Pencarian Seluler -->
@@ -86,12 +84,19 @@
         <div class="p-4 flex flex-col h-full">
           <div class="flex justify-between items-center">
             <!-- Logo di Overlay -->
-            <div class="w-32 sm:w-40 h-auto">
+            <div class="w-40 sm:w-40 h-auto">
               <img 
-                src={logoPath || "/placeholder.svg"} 
+                data-src={logoPath || "/placeholder.svg"} 
                 alt="Logo" 
-                class="w-full h-auto object-contain max-h-10"
+                class="lozad w-full h-auto object-contain"
               >
+              <noscript>
+                <img 
+                  src={logoPath || "/placeholder.svg"} 
+                  alt="Logo" 
+                  class="w-full h-auto object-contain"
+                >
+              </noscript>
             </div>
             
             <!-- Tombol Tutup -->
@@ -104,25 +109,13 @@
             </button>
           </div>
 
-          <!-- Form Pencarian Seluler -->
-          <form 
-            on:submit={tanganiPencarian}
-            class="mt-8 flex flex-col space-y-4 flex-grow"
-          >
-            <input 
-              type="search" 
-              bind:value={$kueriPencarian}
-              placeholder="Cari apa pun..."
-              class="w-full px-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/50 text-base"
-              autofocus
-            >
-            <button 
-              type="submit"
-              class="w-full py-2 bg-primary text-white rounded-full hover:bg-opacity-90 transition-colors"
-            >
-              Cari
-            </button>
-          </form>
+          <!-- Form Pencarian Seluler menggunakan komponen SearchComponent -->
+          <div class="mt-8 flex-grow">
+            <SearchComponent 
+              isMobile={true} 
+              onClose={tutupPencarianSeluler} 
+            />
+          </div>
         </div>
       </div>
     {/if}
@@ -130,10 +123,27 @@
 </nav>
 
 <style>
-  /* Pastikan logo tidak terlalu besar pada layar kecil */
+  /* Menghapus batasan max-height untuk memastikan logo dapat ditampilkan dengan ukuran penuh */
   @media (max-width: 640px) {
-    :global(img[alt="Logo"]) {
-      max-height: 2.5rem;
+    :global(.container a[aria-label="Beranda"] div) {
+      height: auto !important;
+      min-width: 8rem; /* Memastikan lebar minimum */
     }
+    
+    :global(img[alt="Logo"]) {
+      width: 100% !important;
+      height: auto !important;
+      transform: scale(1); /* Memastikan ukuran asli ditampilkan */
+    }
+  }
+  
+  /* Styling untuk lazy-loaded images */
+  :global(.lozad) {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+  }
+  
+  :global(.lozad.loaded) {
+    opacity: 1;
   }
 </style>
